@@ -6,43 +6,46 @@ import URL from "./models/url.model.js";
 import authMiddleware from "./middlewares/auth.middleware.js";
 import userRoutes from "./routes/user.routes.js";
 import cookieParser from "cookie-parser";
-const app = express();
 import dotenv from "dotenv";
-// ✅ Enable CORS before routes
+
+dotenv.config();
+const app = express();
+
 app.use(
   cors({
-    origin: "https://shortly-seven-chi.vercel.app",
+    origin: "https://shortly-seven-chi.vercel.app", // ❌ remove trailing /
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-dotenv.config();
-// ✅ Your routes
+
+// 🔓 Public routes
 app.use("/", userRoutes);
-app.use("/", authMiddleware, route);
 
-app.get("/me", authMiddleware, (req, res) => {
-  // authMiddleware already fetched and attached the user
-  res.json({ user: req.user });
-});
-
+// 🔓 Public shortId redirect route
 app.get("/:shortId", async (req, res) => {
   const shortId = req.params.shortId;
   const entry = await URL.findOneAndUpdate(
     { shortId },
-    {
-      $push: { visitHistory: { timestamp: Date.now() } },
-    }
+    { $push: { visitHistory: { timestamp: Date.now() } } }
   );
+
+  if (!entry) {
+    return res.status(404).json({ message: "Short URL not found" });
+  }
+
   res.redirect(entry.redirectedUrl);
 });
 
-const PORT = 8000;
+// 🔒 Protected routes (need token)
+app.use("/", authMiddleware, route);
 
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`app is listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   connectDB();
 });
