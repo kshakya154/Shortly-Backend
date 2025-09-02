@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 // ✅ Enable CORS before routes
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://shortly-backend-amcp.onrender.com/",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -28,7 +28,6 @@ app.get("/me", authMiddleware, (req, res) => {
   // authMiddleware already fetched and attached the user
   res.json({ user: req.user });
 });
-
 
 app.get("/:shortId", async (req, res) => {
   const shortId = req.params.shortId;
