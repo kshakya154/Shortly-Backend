@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 // ✅ Enable CORS before routes
 app.use(
   cors({
-    origin: "https://shortly-seven-chi.vercel.app/",
+    origin: "https://shortly-seven-chi.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
