@@ -13,7 +13,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://shortly-seven-chi.vercel.app", // ❌ remove trailing /
+    origin: "https://shortly-seven-chi.vercel.app", // ✅ no trailing slash
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -23,29 +23,35 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🔓 Public routes
-app.use("/", userRoutes);
+// 🔓 Public auth routes (register, login, logout, etc.)
+app.use("/auth", userRoutes);
 
-// 🔓 Public shortId redirect route
+// 🔓 Public shortId redirect route (no token required)
 app.get("/:shortId", async (req, res) => {
-  const shortId = req.params.shortId;
-  const entry = await URL.findOneAndUpdate(
-    { shortId },
-    { $push: { visitHistory: { timestamp: Date.now() } } }
-  );
+  try {
+    const shortId = req.params.shortId;
+    const entry = await URL.findOneAndUpdate(
+      { shortId },
+      { $push: { visitHistory: { timestamp: Date.now() } } }
+    );
 
-  if (!entry) {
-    return res.status(404).json({ message: "Short URL not found" });
+    if (!entry) {
+      return res.status(404).json({ message: "Short URL not found" });
+    }
+
+    // ✅ redirect user to original URL
+    return res.redirect(entry.redirectedUrl);
+  } catch (err) {
+    console.error("Redirect error:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  res.redirect(entry.redirectedUrl);
 });
 
-// 🔒 Protected routes (need token)
-app.use("/", authMiddleware, route);
+// 🔒 Protected routes (require login via cookie JWT)
+app.use("/api", authMiddleware, route);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
   connectDB();
 });
