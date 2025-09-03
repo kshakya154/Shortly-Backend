@@ -11,9 +11,10 @@ import dotenv from "dotenv";
 dotenv.config();
 const app = express();
 
+// ✅ CORS setup
 app.use(
   cors({
-    origin: "https://shortly-seven-chi.vercel.app", // ✅ no trailing slash
+    origin: ["https://shortly-seven-chi.vercel.app"], // your frontend domain
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -23,10 +24,10 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🔓 Public auth routes (register, login, logout, etc.)
-app.use("/auth", userRoutes);
+// 🔓 Public routes (signup/login)
+app.use("/", userRoutes);
 
-// 🔓 Public shortId redirect route (no token required)
+// 🔓 Public shortId redirect route
 app.get("/:shortId", async (req, res) => {
   try {
     const shortId = req.params.shortId;
@@ -39,19 +40,30 @@ app.get("/:shortId", async (req, res) => {
       return res.status(404).json({ message: "Short URL not found" });
     }
 
-    // ✅ redirect user to original URL
     return res.redirect(entry.redirectedUrl);
   } catch (err) {
     console.error("Redirect error:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
-// 🔒 Protected routes (require login via cookie JWT)
-app.use("/api", authMiddleware, route);
+// 🔒 Protected routes (need token)
+app.use("/", authMiddleware, route);
+
+// ✅ /me route for auth check
+app.get("/me", authMiddleware, async (req, res) => {
+  try {
+    res.json({
+      id: req.user.id,
+      email: req.user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   connectDB();
 });
