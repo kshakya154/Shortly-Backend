@@ -27,7 +27,7 @@ const signup = async (req, res) => {
     };
     const createdUser = await User.create(Userdata);
     res.status(201).json({
-      message: "User created successfully",
+      message: "User created successfully,Login Now!",
       user: {
         id: createdUser._id,
         email: createdUser.email,
